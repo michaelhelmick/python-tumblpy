@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 """ Tumblpy """
 
@@ -32,11 +32,6 @@ except ImportError:
             from django.utils import simplejson as json
         except ImportError:
             raise ImportError('A json library is required to use this python library. Lol, yay for being verbose. ;)')
-
-try:
-    from django.utils import simplejson as json
-except ImportError:
-    import simplejson as json
 
 # Detect if oauth2 supports the callback_url argument to request
 OAUTH_CLIENT_INSPECTION = inspect.getargspec(oauth.Client.request)
@@ -104,7 +99,7 @@ class Tumblpy(object):
         # If there's headers, set them. If not, lets 
         self.headers = headers
         if self.headers is None:
-            self.headers = {'User-agent': 'Tumblpy 1.0'}
+            self.headers = {'User-agent': 'Tumblpy %s' % __version__}
 
         self.consumer = None
         self.token = None
@@ -141,7 +136,7 @@ class Tumblpy(object):
         if OAUTH_LIB_SUPPORTS_CALLBACK:
             request_args['callback_url'] = callback_url
         
-        resp, content = self.client.request(self.request_token_url, "GET", **request_args)
+        resp, content = self.client.request(self.request_token_url, 'GET', **request_args)
 
         status = int(resp['status'])
         if status != 200:
