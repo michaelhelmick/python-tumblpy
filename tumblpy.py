@@ -228,8 +228,10 @@ class Tumblpy(object):
 
         return content['response']
 
-    def post(self, endpoint, blog_url=None, extra_endpoints=None, params={}):
+    def post(self, endpoint, blog_url=None, extra_endpoints=None, params=None):
+        params = params or {}
         return self.api_request(endpoint, method='POST', blog_url=blog_url, extra_endpoints=extra_endpoints, params=params)
 
-    def get(self, endpoint, blog_url=None, extra_endpoints=None, params={}):
+    def get(self, endpoint, blog_url=None, extra_endpoints=None, params=None):
+        params = params or {}
         return self.api_request(endpoint, method='GET', blog_url=blog_url, extra_endpoints=extra_endpoints, params=params)
