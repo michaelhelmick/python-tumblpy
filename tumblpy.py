@@ -6,9 +6,7 @@ __author__ = 'Mike Helmick <mikehelmick@me.com>'
 __version__ = '0.2.0'
 
 import urllib
-import inspect
 import time
-from urllib2 import HTTPError
 
 try:
     from urlparse import parse_qsl
@@ -29,9 +27,10 @@ except ImportError:
         except ImportError:
             raise ImportError('A json library is required to use this python library. Lol, yay for being verbose. ;)')
 
+
 class TumblpyError(Exception):
     """ Generic error class, catch-all for most Tumblpy issues.
-        
+
         from Tumblpy import TumblpyError, TumblpyRateLimitError, TumblpyAuthError
     """
     def __init__(self, msg, error_code=None):
@@ -43,6 +42,7 @@ class TumblpyError(Exception):
 
     def __str__(self):
         return repr(self.msg)
+
 
 class TumblpyRateLimitError(TumblpyError):
     """
@@ -56,6 +56,7 @@ class TumblpyRateLimitError(TumblpyError):
     def __str__(self):
         return repr(self.msg)
 
+
 class TumblpyAuthError(TumblpyError):
     """ Raised when you try to access a protected resource and it fails due to some issue with your authentication. """
     def __init__(self, msg):
@@ -63,6 +64,7 @@ class TumblpyAuthError(TumblpyError):
 
     def __str__(self):
         return repr(self.msg)
+
 
 class Tumblpy(object):
     def __init__(self, app_key=None, app_secret=None, oauth_token=None, oauth_token_secret=None, headers=None, client_args=None):
@@ -82,9 +84,9 @@ class Tumblpy(object):
         self.oauth_token = oauth_token
         self.oauth_secret = oauth_token_secret
 
-        self.default_params = {'api_key':self.app_key}
+        self.default_params = {'api_key': self.app_key}
 
-        # If there's headers, set them. If not, lets 
+        # If there's headers, set them. If not, lets
         self.headers = headers or {'User-agent': 'Tumblpy %s' % __version__}
 
         self.consumer = None
@@ -99,7 +101,7 @@ class Tumblpy(object):
 
         if self.oauth_token is not None and self.oauth_secret is not None:
             self.token = oauth.Token(key=oauth_token, secret=oauth_token_secret)
-        
+
         if self.consumer is not None and self.token is not None:
             # Authenticated
             self.client = oauth.Client(self.consumer, self.token, **client_args)
@@ -123,15 +125,15 @@ class Tumblpy(object):
         status = int(resp['status'])
         if status != 200:
             raise TumblpyAuthError('There was a problem authenticating you. Error: %s, Message: %s' % (status, content))
-        
+
         request_tokens = dict(parse_qsl(content))
-        
+
         auth_url_params = {
-            'oauth_token' : request_tokens['oauth_token'],
+            'oauth_token': request_tokens['oauth_token'],
         }
-        
+
         request_tokens['auth_url'] = self.authenticate_url + '?' + urllib.urlencode(auth_url_params)
-        
+
         return request_tokens
 
     def get_access_token(self, oauth_verifier):
@@ -142,12 +144,12 @@ class Tumblpy(object):
             oauth_token = authorized_tokens['oauth_token']
             oauth_token_secret = authorized_tokens['oauth_token_secret']
         """
-        resp, content = self.client.request(self.access_token_url+'?oauth_verifier=%s' % oauth_verifier, 'GET')
+        resp, content = self.client.request('%s?oauth_verifier=%s' % (self.access_token_url, oauth_verifier), 'GET')
         return dict(parse_qsl(content))
 
     def api_request(self, endpoint, blog_url=None, method='GET', extra_endpoints=None, params=None):
         params = params or {}
-        
+
         # http://api.tumblr.com/v2/
         url = self.api_url
 
@@ -191,8 +193,8 @@ class Tumblpy(object):
         else:
             url = '%s?%s' % (url, urllib.urlencode(params))
             resp, content = self.client.request(url, 'GET', headers=self.headers)
-        
-        status = int(resp['status']) # I don't know why Tumblr doesn't return status as an it, but let's cast it to an int..
+
+        status = int(resp['status'])  # I don't know why Tumblr doesn't return status as an it, but let's cast it to an int..
         if status < 200 or status >= 300:
             raise TumblpyError('There was an error making your request.', error_code=status)
 

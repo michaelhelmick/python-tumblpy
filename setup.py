@@ -15,7 +15,7 @@ setup(
     long_description=open('README.md').read(),
     download_url="https://github.com/michaelhelmick/python-tumblpy/zipball/master",
     py_modules=["tumblpy"],
-    classifiers = [
+    classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
