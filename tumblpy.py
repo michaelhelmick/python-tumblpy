@@ -3,15 +3,12 @@
 """ Tumblpy """
 
 __author__ = 'Mike Helmick <mikehelmick@me.com>'
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 
 import urllib
-import urllib2
-import urlparse
-import httplib
-import httplib2
 import inspect
 import time
+from urllib2 import HTTPError
 
 try:
     from urlparse import parse_qsl
@@ -19,8 +16,7 @@ except ImportError:
     from cgi import parse_qsl
 
 import oauth2 as oauth
-
-from urllib2 import HTTPError
+import httplib2
 
 try:
     import simplejson as json
@@ -33,29 +29,22 @@ except ImportError:
         except ImportError:
             raise ImportError('A json library is required to use this python library. Lol, yay for being verbose. ;)')
 
-# Detect if oauth2 supports the callback_url argument to request
-OAUTH_CLIENT_INSPECTION = inspect.getargspec(oauth.Client.request)
-try:
-    OAUTH_LIB_SUPPORTS_CALLBACK = 'callback_url' in OAUTH_CLIENT_INSPECTION.args
-except AttributeError:
-    # Python 2.5 doesn't return named tuples, so don't look for an args section specifically.
-    OAUTH_LIB_SUPPORTS_CALLBACK = 'callback_url' in OAUTH_CLIENT_INSPECTION
-
-
-class TumblpyError(AttributeError):
+class TumblpyError(Exception):
     """ Generic error class, catch-all for most Tumblpy issues.
         
-        from Tumblthon import TumblpyError, AuthError
+        from Tumblpy import TumblpyError, TumblpyRateLimitError, TumblpyAuthError
     """
     def __init__(self, msg, error_code=None):
         self.msg = msg
         if error_code == 503:
-            raise APIRateLimit(msg)
+            raise TumblpyRateLimitError(msg)
+        elif error_code == 401:
+            raise TumblpyAuthError(msg)
 
     def __str__(self):
         return repr(self.msg)
 
-class APIRateLimit(TumblpyError):
+class TumblpyRateLimitError(TumblpyError):
     """
         Raised when you've hit an API limit. Try to avoid these, read the API
         docs if you're running into issues here, Tumblthon does not concern itself with
@@ -67,7 +56,7 @@ class APIRateLimit(TumblpyError):
     def __str__(self):
         return repr(self.msg)
 
-class AuthError(TumblpyError):
+class TumblpyAuthError(TumblpyError):
     """ Raised when you try to access a protected resource and it fails due to some issue with your authentication. """
     def __init__(self, msg):
         self.msg = msg
@@ -76,7 +65,7 @@ class AuthError(TumblpyError):
         return repr(self.msg)
 
 class Tumblpy(object):
-    def __init__(self, app_key=None, app_secret=None, oauth_token=None, oauth_token_secret=None, headers=None, client_args={}, callback_url=None):
+    def __init__(self, app_key=None, app_secret=None, oauth_token=None, oauth_token_secret=None, headers=None, client_args=None):
         # Define some API URLs real quick
         self.base_api_url = 'http://api.tumblr.com'
         self.api_version = 'v2'
@@ -92,17 +81,16 @@ class Tumblpy(object):
         self.app_secret = app_secret
         self.oauth_token = oauth_token
         self.oauth_secret = oauth_token_secret
-        self.callback_url = callback_url
 
         self.default_params = {'api_key':self.app_key}
 
         # If there's headers, set them. If not, lets 
-        self.headers = headers
-        if self.headers is None:
-            self.headers = {'User-agent': 'Tumblpy %s' % __version__}
+        self.headers = headers or {'User-agent': 'Tumblpy %s' % __version__}
 
         self.consumer = None
         self.token = None
+
+        client_args = client_args or {}
 
         # See if they're authenticating for the first or if they already have some tokens.
         # http://michaelhelmick.com/tokens.jpg
@@ -130,35 +118,17 @@ class Tumblpy(object):
             auth_url = auth_props['auth_url']
             print auth_url
         """
-        callback_url = self.callback_url or 'oob'
-        
-        request_args = {}
-        if OAUTH_LIB_SUPPORTS_CALLBACK:
-            request_args['callback_url'] = callback_url
-        
-        resp, content = self.client.request(self.request_token_url, 'GET', **request_args)
+        resp, content = self.client.request(self.request_token_url, 'GET')
 
         status = int(resp['status'])
         if status != 200:
-            raise AuthError('There was a problem authenticating you. Error: %s, Message: %s' % (status, content))
+            raise TumblpyAuthError('There was a problem authenticating you. Error: %s, Message: %s' % (status, content))
         
         request_tokens = dict(parse_qsl(content))
         
-        oauth_callback_confirmed = request_tokens.get('oauth_callback_confirmed') == 'true'
-        
-        if not OAUTH_LIB_SUPPORTS_CALLBACK and callback_url !='oob' and oauth_callback_confirmed:
-            import warnings
-
-            warnings.warn('oauth2 library doesn\'t support OAuth 1.0a type callback')
-            oauth_callback_confirmed = False
-
         auth_url_params = {
             'oauth_token' : request_tokens['oauth_token'],
         }
-        
-        # Use old-style callback argument
-        if callback_url !='oob' and not oauth_callback_confirmed:
-            auth_url_params['oauth_callback'] = callback_url
         
         request_tokens['auth_url'] = self.authenticate_url + '?' + urllib.urlencode(auth_url_params)
         
@@ -175,7 +145,9 @@ class Tumblpy(object):
         resp, content = self.client.request(self.access_token_url+'?oauth_verifier=%s' % oauth_verifier, 'GET')
         return dict(parse_qsl(content))
 
-    def api_request(self, endpoint, blog_url=None, method='GET', extra_endpoints=None, params={}):
+    def api_request(self, endpoint, blog_url=None, method='GET', extra_endpoints=None, params=None):
+        params = params or {}
+        
         # http://api.tumblr.com/v2/
         url = self.api_url
 
