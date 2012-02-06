@@ -2,6 +2,11 @@
 Couldn't find a nice clean class that I liked to interact with Tumblr v2 API. Some help from [ryanmcgrath twython class](https://github.com/ryanmcgrath/twython), thanks a lot. Reading over some of that code helped a lot!
 Hope this documentation explains everything you need to get started. Any questions feel free to email me or inbox me.
 
+#Install through pip...
+```
+pip install python-tumblpy
+```
+
 #Authorization URL
 *Get an authorization url for your user*
 
