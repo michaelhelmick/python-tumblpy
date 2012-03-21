@@ -3,10 +3,11 @@
 """ Tumblpy """
 
 __author__ = 'Mike Helmick <mikehelmick@me.com>'
-__version__ = '0.2.0'
+__version__ = '0.3.0'
 
 import urllib
 import time
+import inspect
 
 try:
     from urlparse import parse_qsl
@@ -26,6 +27,21 @@ except ImportError:
             from django.utils import simplejson as json
         except ImportError:
             raise ImportError('A json library is required to use this python library. Lol, yay for being verbose. ;)')
+
+# The following is grabbed from Twython
+# Try and gauge the old OAuth2 library spec. Versions 1.5 and greater no longer have the callback
+# url as part of the request object; older versions we need to patch for Python 2.5... ugh. ;P
+OAUTH_CALLBACK_IN_URL = False
+OAUTH_LIB_SUPPORTS_CALLBACK = False
+if not hasattr(oauth, '_version') or float(oauth._version.manual_verstr) <= 1.4:
+    OAUTH_CLIENT_INSPECTION = inspect.getargspec(oauth.Client.request)
+    try:
+        OAUTH_LIB_SUPPORTS_CALLBACK = 'callback_url' in OAUTH_CLIENT_INSPECTION.args
+    except AttributeError:
+        # Python 2.5 doesn't return named tuples, so don't look for an args section specifically.
+        OAUTH_LIB_SUPPORTS_CALLBACK = 'callback_url' in OAUTH_CLIENT_INSPECTION
+else:
+    OAUTH_CALLBACK_IN_URL = True
 
 
 class TumblpyError(Exception):
@@ -67,7 +83,7 @@ class TumblpyAuthError(TumblpyError):
 
 
 class Tumblpy(object):
-    def __init__(self, app_key=None, app_secret=None, oauth_token=None, oauth_token_secret=None, headers=None, client_args=None):
+    def __init__(self, app_key=None, app_secret=None, oauth_token=None, oauth_token_secret=None, headers=None, client_args=None, callback_url=None):
         # Define some API URLs real quick
         self.base_api_url = 'http://api.tumblr.com'
         self.api_version = 'v2'
@@ -83,6 +99,8 @@ class Tumblpy(object):
         self.app_secret = app_secret
         self.oauth_token = oauth_token
         self.oauth_secret = oauth_token_secret
+
+        self.callback_url = callback_url
 
         self.default_params = {'api_key': self.app_key}
 
@@ -120,7 +138,20 @@ class Tumblpy(object):
             auth_url = auth_props['auth_url']
             print auth_url
         """
-        resp, content = self.client.request(self.request_token_url, 'GET')
+        callback_url = self.callback_url or 'oob'
+
+        request_args = {}
+        method = 'GET'
+
+        if OAUTH_LIB_SUPPORTS_CALLBACK:
+            request_args['oauth_callback'] = callback_url
+        else:
+            # Thanks @jbouvier for the following hack
+            # This is a hack for versions of oauth that don't support the callback url
+            request_args['body'] = urllib.urlencode({'oauth_callback': callback_url})
+            method = 'POST'
+
+        resp, content = self.client.request(self.request_token_url, method, **request_args)
 
         status = int(resp['status'])
         if status != 200:

@@ -11,9 +11,24 @@ pip install python-tumblpy
 *Get an authorization url for your user*
 
 ```python
+# Without a dynamic callback url
+# This will use the callback url specified in your app
+
+# Go to http://www.tumblr.com/oauth/apps and click your
+# app to find out your dynamic callback url
 t = Tumblpy(app_key = '*your app key*',
             app_secret = '*your app secret*')
+```
 
+If you wish to have a dynamic callback url, specify ```callback_url``` when you initiate the class.
+
+```python
+t = Tumblpy(app_key = '*your app key*',
+            app_secret = '*your app secret*'
+            callback_url = 'http://example.com/callback/')
+```
+
+```python
 auth_props = t.get_authentication_tokens()
 auth_url = auth_props['auth_url']
 
