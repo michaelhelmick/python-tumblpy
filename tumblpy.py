@@ -3,7 +3,7 @@
 """ Tumblpy """
 
 __author__ = 'Mike Helmick <mikehelmick@me.com>'
-__version__ = '0.3.0'
+__version__ = '0.3.1'
 
 import urllib
 import time
@@ -206,21 +206,7 @@ class Tumblpy(object):
         self.headers.update({'Content-Type': 'application/json'})
 
         if method == 'POST':
-            params = {
-                'oauth_version': "1.0",
-                'oauth_nonce': oauth.generate_nonce(),
-                'oauth_timestamp': int(time.time()),
-                'oauth_token': self.token.key,
-                'oauth_consumer_key': self.consumer.key,
-            }
-
-            req = oauth.Request(method='POST', url=url, parameters=params)
-
-            ## Sign the request.
-            signature_method = oauth.SignatureMethod_HMAC_SHA1()
-            req.sign_request(signature_method, self.consumer, self.token)
-
-            resp, content = self.client.request(req.to_url(), 'POST', headers=self.headers)
+            resp, content = self.client.request(url, 'POST', urllib.urlencode(params), headers=self.headers)
         else:
             url = '%s?%s' % (url, urllib.urlencode(params))
             resp, content = self.client.request(url, 'GET', headers=self.headers)
