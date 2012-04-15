@@ -3,10 +3,9 @@
 """ Tumblpy """
 
 __author__ = 'Mike Helmick <mikehelmick@me.com>'
-__version__ = '0.3.1'
+__version__ = '0.4.0'
 
 import urllib
-import time
 import inspect
 
 try:
@@ -16,6 +15,7 @@ except ImportError:
 
 import oauth2 as oauth
 import httplib2
+import urllib2  # Need this for completing upload requests
 
 try:
     import simplejson as json
@@ -27,6 +27,28 @@ except ImportError:
             from django.utils import simplejson as json
         except ImportError:
             raise ImportError('A json library is required to use this python library. Lol, yay for being verbose. ;)')
+
+
+import mimetypes
+import mimetools
+import codecs
+from io import BytesIO
+
+writer = codecs.lookup('utf-8')[3]
+
+
+def get_content_type(filename):
+    return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+
+
+def iter_fields(fields):
+    """Iterate over fields.
+
+    Supports list of (k, v) tuples and dicts.
+    """
+    if isinstance(fields, dict):
+        return ((k, v) for k, v in fields.iteritems())
+    return ((k, v) for k, v in fields)
 
 # The following is grabbed from Twython
 # Try and gauge the old OAuth2 library spec. Versions 1.5 and greater no longer have the callback
@@ -61,10 +83,7 @@ class TumblpyError(Exception):
 
 
 class TumblpyRateLimitError(TumblpyError):
-    """
-        Raised when you've hit an API limit. Try to avoid these, read the API
-        docs if you're running into issues here, Tumblthon does not concern itself with
-        this matter beyond telling you that you've done goofed.
+    """ Raised when you've hit an API limit.
     """
     def __init__(self, msg):
         self.msg = msg
@@ -98,7 +117,7 @@ class Tumblpy(object):
         self.app_key = app_key
         self.app_secret = app_secret
         self.oauth_token = oauth_token
-        self.oauth_secret = oauth_token_secret
+        self.oauth_token_secret = oauth_token_secret
 
         self.callback_url = callback_url
 
@@ -117,8 +136,8 @@ class Tumblpy(object):
         if self.app_key is not None and self.app_secret is not None:
             self.consumer = oauth.Consumer(key=self.app_key, secret=self.app_secret)
 
-        if self.oauth_token is not None and self.oauth_secret is not None:
-            self.token = oauth.Token(key=oauth_token, secret=oauth_token_secret)
+        if self.oauth_token is not None and self.oauth_token_secret is not None:
+            self.token = oauth.Token(key=self.oauth_token, secret=self.oauth_token_secret)
 
         if self.consumer is not None and self.token is not None:
             # Authenticated
@@ -138,7 +157,7 @@ class Tumblpy(object):
             auth_url = auth_props['auth_url']
             print auth_url
         """
-        callback_url = self.callback_url or 'oob'
+        callback_url = self.callback_url
 
         request_args = {}
         method = 'GET'
@@ -178,7 +197,8 @@ class Tumblpy(object):
         resp, content = self.client.request('%s?oauth_verifier=%s' % (self.access_token_url, oauth_verifier), 'GET')
         return dict(parse_qsl(content))
 
-    def api_request(self, endpoint, blog_url=None, method='GET', extra_endpoints=None, params=None):
+    def api_request(self, endpoint, blog_url=None, method='GET',
+                    extra_endpoints=None, params=None, files=None):
         params = params or {}
 
         # http://api.tumblr.com/v2/
@@ -192,7 +212,7 @@ class Tumblpy(object):
 
             url = '%sblog/%s/' % (self.api_url, blog_url)
 
-        url = '%s%s/' % (url, endpoint)
+        url = '%s%s' % (url, endpoint)
         if extra_endpoints is not None:
             # In cases like:
             # http://api.tumblr.com/v2/blog/blogname.tumblr.com/posts/type/
@@ -203,26 +223,131 @@ class Tumblpy(object):
 
         params.update(self.default_params)
 
-        self.headers.update({'Content-Type': 'application/json'})
-
         if method == 'POST':
-            resp, content = self.client.request(url, 'POST', urllib.urlencode(params), headers=self.headers)
+            if files is not None:
+                # When uploading a file, we need to create a fake request
+                # to sign parameters that are not multipart before we add
+                # the multipart file to the parameters...
+                # OAuth is not meant to sign multipart post data
+                faux_req = oauth.Request.from_consumer_and_token(self.consumer,
+                                                                 token=self.token,
+                                                                 http_method="POST",
+                                                                 http_url=url,
+                                                                 parameters=params)
+
+                faux_req.sign_request(oauth.SignatureMethod_HMAC_SHA1(),
+                                      self.consumer,
+                                      self.token)
+
+                all_upload_params = dict(parse_qsl(faux_req.to_postdata()))
+                # For Tumblr, all media (photos, videos)
+                # are sent with the 'data' parameter
+                all_upload_params['data'] = (files.name, files.read())
+                body, content_type = self.encode_multipart_formdata(all_upload_params)
+
+                self.headers.update({
+                    'Content-Type': content_type,
+                    'Content-Length': str(len(body))
+                })
+
+                req = urllib2.Request(url, body, self.headers)
+                try:
+                    req = urllib2.urlopen(req)
+                except urllib2.HTTPError, e:
+                    # Making a fake resp var because urllib2.urlopen doesn't
+                    # return a tuple like OAuth2 client.request does
+                    resp = {'status': e.code}
+                    content = e.read()
+
+                # If no error, assume response was 200
+                resp = {'status': 200}
+                content = req.read()
+            else:
+                resp, content = self.client.request(url, 'POST', urllib.urlencode(params), headers=self.headers)
         else:
             url = '%s?%s' % (url, urllib.urlencode(params))
             resp, content = self.client.request(url, 'GET', headers=self.headers)
 
+        try:
+            content = json.loads(content)
+        except ValueError:
+            raise TumblpyError('Invalid JSON, response was unable to be parsed.')
+
         status = int(resp['status'])  # I don't know why Tumblr doesn't return status as an it, but let's cast it to an int..
         if status < 200 or status >= 300:
-            raise TumblpyError('There was an error making your request.', error_code=status)
+            error_message = ''
+            if 'response' in content and \
+                ('errors' in content['response'] or 'error' in content['response']):
+                if 'errors' in content['response']:
+                    for error in content['response']['errors']:
+                        error_message += '%s ' % error
+                elif 'error' in content['response']:
+                    error_message = content['response']['error']
 
-        content = json.loads(content)
+            if error_message == '':
+                error_message = 'There was an error making your request.'
+            raise TumblpyError(error_message, error_code=status)
 
         return content['response']
 
-    def post(self, endpoint, blog_url=None, extra_endpoints=None, params=None):
+    def post(self, endpoint, blog_url=None, extra_endpoints=None, params=None, files=None):
         params = params or {}
-        return self.api_request(endpoint, method='POST', blog_url=blog_url, extra_endpoints=extra_endpoints, params=params)
+        return self.api_request(endpoint, method='POST', blog_url=blog_url,
+                                extra_endpoints=extra_endpoints, params=params,
+                                files=files)
 
     def get(self, endpoint, blog_url=None, extra_endpoints=None, params=None):
         params = params or {}
-        return self.api_request(endpoint, method='GET', blog_url=blog_url, extra_endpoints=extra_endpoints, params=params)
+        return self.api_request(endpoint, method='GET', blog_url=blog_url,
+                                extra_endpoints=extra_endpoints, params=params)
+
+    def encode_multipart_formdata(self, fields, boundary=None):
+        """
+        Encode a dictionary of ``fields`` using the multipart/form-data mime format.
+
+        :param fields:
+            Dictionary of fields or list of (key, value) field tuples.  The key is
+            treated as the field name, and the value as the body of the form-data
+            bytes. If the value is a tuple of two elements, then the first element
+            is treated as the filename of the form-data section.
+
+            Field names and filenames must be unicode.
+
+        :param boundary:
+            If not specified, then a random boundary will be generated using
+            :func:`mimetools.choose_boundary`.
+        """
+        body = BytesIO()
+        if boundary is None:
+            boundary = mimetools.choose_boundary()
+
+        for fieldname, value in iter_fields(fields):
+            body.write('--%s\r\n' % (boundary))
+
+            if isinstance(value, tuple):
+                filename, data = value
+                writer(body).write('Content-Disposition: form-data; name="%s"; '
+                                   'filename="%s"\r\n' % (fieldname, filename))
+                body.write('Content-Type: %s\r\n\r\n' %
+                           (get_content_type(filename)))
+            else:
+                data = value
+                writer(body).write('Content-Disposition: form-data; name="%s"\r\n'
+                                   % (fieldname))
+                body.write(b'Content-Type: text/plain\r\n\r\n')
+
+            if isinstance(data, int):
+                data = str(data)  # Backwards compatibility
+
+            if isinstance(data, unicode):
+                writer(body).write(data)
+            else:
+                body.write(data)
+
+            body.write(b'\r\n')
+
+        body.write('--%s--\r\n' % (boundary))
+
+        content_type = 'multipart/form-data; boundary=%s' % boundary
+
+        return body.getvalue(), content_type

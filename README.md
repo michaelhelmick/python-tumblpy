@@ -75,5 +75,17 @@ blog_url = blog_url['user']['blogs'][0]['url']
 # Let's get their blog posts for that URL
 posts = t.get('posts', blog_url=blog_url)
 
+# Uploading a photo post
+```python
+'''
+Assuming you already have authenticated and wanted to grab your blog URL first if not, use the following function
+'''
+blog_url = t.post('user/info')
+blog_url = blog_url['user']['blogs'][0]['url']  # Will look something like http://omglegit.tumblr.com
+
+files = open('/path/to/file/image.png', 'rb')
+print t.post('post', blog_url=blog_url, params={'type':'photo', 'caption': 'Test Caption'}, files=files)
+```
+
 print posts
 ```
