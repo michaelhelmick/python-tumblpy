@@ -301,6 +301,7 @@ class Tumblpy(object):
         return self.api_request(endpoint, method='GET', blog_url=blog_url,
                                 extra_endpoints=extra_endpoints, params=params)
 
+    # Thanks urllib3 <3
     def encode_multipart_formdata(self, fields, boundary=None):
         """
         Encode a dictionary of ``fields`` using the multipart/form-data mime format.
