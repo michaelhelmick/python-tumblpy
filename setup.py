@@ -12,7 +12,7 @@ setup(
     url='https://github.com/michaelhelmick/python-tumblpy/',
     keywords='python tumblpy tumblr oauth api',
     description='A Python Library to interface with Tumblr v2 REST API & OAuth',
-    long_description=open('README.md').read(),
+    long_description=open('README.rst').read(),
     download_url="https://github.com/michaelhelmick/python-tumblpy/zipball/master",
     py_modules=["tumblpy"],
     classifiers=[
