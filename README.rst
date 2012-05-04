@@ -97,6 +97,19 @@ Getting some User information
     blog_url = t.post('user/info')
     blog_url = blog_url['user']['blogs'][0]['url']
 
+Get a User Avatar URL
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+::
+
+    t = Tumblpy()
+    avatar = t.get_avatar_url(blog_url='omglegit.tumblr.com', size=128)
+    print avatar['url']
+
+    # OR
+
+    avatar = t.get('avatar', blog_url='omglegit.tumblr.com'. extra_endpoints=['128'])
+    print avatar['url']
+
 Getting posts from a certain blog
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ::

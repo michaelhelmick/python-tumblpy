@@ -3,7 +3,7 @@
 """ Tumblpy """
 
 __author__ = 'Mike Helmick <mikehelmick@me.com>'
-__version__ = '0.4.0'
+__version__ = '0.5.0'
 
 import urllib
 import inspect
@@ -73,10 +73,11 @@ class TumblpyError(Exception):
     """
     def __init__(self, msg, error_code=None):
         self.msg = msg
-        if error_code == 503:
-            raise TumblpyRateLimitError(msg)
-        elif error_code == 401:
-            raise TumblpyAuthError(msg)
+        if error_code is not None:
+            if error_code == 503:
+                raise TumblpyRateLimitError(msg)
+            elif error_code == 401:
+                raise TumblpyAuthError(msg)
 
     def __str__(self):
         return repr(self.msg)
@@ -269,7 +270,29 @@ class Tumblpy(object):
             resp, content = self.client.request(url, 'GET', headers=self.headers)
 
         try:
-            content = json.loads(content)
+            # If it is an avatar we need to check the HEAD of the request
+            # for 'content-location' because Tumblr /avatar endpoint redirects
+            # you from http://api.tumblr.com/v2/blog/<blog_url>/avatar to
+            # an actual url for the image.
+            if endpoint == 'avatar':
+                r = resp
+
+                # Check if we couldn't find the avatar URL, if we can't
+                # build the resp, and content to match our styles
+                if r.get('content-location') is None:
+                    resp = {'status': 404}
+
+                    content = {
+                        'error': 'Unable to get avatar url for %s' % blog_url
+                    }
+                else:
+                    content = {
+                        'response': {
+                            'url': r['content-location']
+                        }
+                    }
+            else:
+                content = json.loads(content)
         except ValueError:
             raise TumblpyError('Invalid JSON, response was unable to be parsed.')
 
@@ -300,6 +323,14 @@ class Tumblpy(object):
         params = params or {}
         return self.api_request(endpoint, method='GET', blog_url=blog_url,
                                 extra_endpoints=extra_endpoints, params=params)
+
+    def get_avatar_url(self, blog_url=None, size=64):
+        if blog_url is None:
+            raise TumblpyError('Please provide a blog url to get an avatar for.')
+
+        size = [str(size)] or ['64']
+
+        return self.get('avatar', blog_url=blog_url, extra_endpoints=size)
 
     # Thanks urllib3 <3
     def encode_multipart_formdata(self, fields, boundary=None):
