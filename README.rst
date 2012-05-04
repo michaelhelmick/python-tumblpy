@@ -97,7 +97,7 @@ Getting some User information
     blog_url = t.post('user/info')
     blog_url = blog_url['user']['blogs'][0]['url']
 
-Get a User Avatar URL
+Get a User Avatar URL (No need for authentication for this method)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ::
 
