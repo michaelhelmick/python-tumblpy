@@ -73,11 +73,12 @@ class TumblpyError(Exception):
     """
     def __init__(self, msg, error_code=None):
         self.msg = msg
+        self.error_code = error_code
         if error_code is not None:
             if error_code == 503:
-                raise TumblpyRateLimitError(msg)
+                raise TumblpyRateLimitError(msg, error_code)
             elif error_code == 401:
-                raise TumblpyAuthError(msg)
+                raise TumblpyAuthError(msg, error_code)
 
     def __str__(self):
         return repr(self.msg)
@@ -86,8 +87,9 @@ class TumblpyError(Exception):
 class TumblpyRateLimitError(TumblpyError):
     """ Raised when you've hit an API limit.
     """
-    def __init__(self, msg):
+    def __init__(self, msg, error_code=None):
         self.msg = msg
+        self.error_code = error_code
 
     def __str__(self):
         return repr(self.msg)
@@ -95,8 +97,9 @@ class TumblpyRateLimitError(TumblpyError):
 
 class TumblpyAuthError(TumblpyError):
     """ Raised when you try to access a protected resource and it fails due to some issue with your authentication. """
-    def __init__(self, msg):
+    def __init__(self, msg, error_code=None):
         self.msg = msg
+        self.error_code = error_code
 
     def __str__(self):
         return repr(self.msg)
@@ -175,7 +178,7 @@ class Tumblpy(object):
 
         status = int(resp['status'])
         if status != 200:
-            raise TumblpyAuthError('There was a problem authenticating you. Error: %s, Message: %s' % (status, content))
+            raise TumblpyAuthError('There was a problem authenticating you. Error: %s, Message: %s' % (status, content), error_code=status)
 
         request_tokens = dict(parse_qsl(content))
 
