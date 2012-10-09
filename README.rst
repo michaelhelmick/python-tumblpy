@@ -124,9 +124,42 @@ Creating a post with a photo
 
     # Assume you are using the blog_url and Tumblpy instance from the previous sections
 
-    files = open('/path/to/file/image.png', 'rb')
-    post = t.post('post', blog_url=blog_url, params={'type':'photo', 'caption': 'Test Caption'}, files=files)
-    print post
+    photo = open('/path/to/file/image.png', 'rb')
+    post = t.post('post', blog_url=blog_url, params={'type':'photo', 'caption': 'Test Caption', 'data': photo})
+    print post  # returns id if posted successfully
+
+Posting an Edited Photo *(This example resizes a photo)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+::
+
+    # Assume you are using the blog_url and Tumblpy instance from the previous sections
+
+    # Like I said in the previous section, you can pass any object that has a
+    # read() method
+
+    # Assume you are working with a JPEG
+
+    from PIL import Image
+    from StringIO import StringIO
+
+    photo = Image.open('/path/to/file/image.jpg')
+
+    basewidth = 320
+    wpercent = (basewidth / float(photo.size[0]))
+    height = int((float(photo.size[1]) * float(wpercent)))
+    photo = photo.resize((basewidth, height), Image.ANTIALIAS)
+
+    image_io = StringIO.StringIO()
+    photo.save(image_io, format='JPEG')
+    
+    image_io.seek(0)
+
+    try:
+        post = t.post('post', blog_url=blog_url, params={'type':'photo', 'caption': 'Test Caption', 'data': photo})
+        print post
+    except TumblpyError, e:
+        # Maybe the file was invalid?
+        print e.message
 
 Following a user
 ~~~~~~~~~~~~~~~~
