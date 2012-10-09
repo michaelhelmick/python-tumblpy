@@ -1,21 +1,10 @@
-#!/usr/bin/env python
-
 """ Tumblpy """
 
 __author__ = 'Mike Helmick <mikehelmick@me.com>'
-__version__ = '0.5.0'
+__version__ = '0.6.0'
 
-import urllib
-import inspect
-
-try:
-    from urlparse import parse_qsl
-except ImportError:
-    from cgi import parse_qsl
-
-import oauth2 as oauth
-import httplib2
-import urllib2  # Need this for completing upload requests
+import requests
+from requests.auth import OAuth1
 
 try:
     import simplejson as json
@@ -28,48 +17,30 @@ except ImportError:
         except ImportError:
             raise ImportError('A json library is required to use this python library. Lol, yay for being verbose. ;)')
 
+try:
+    from urlparse import parse_qsl
+except ImportError:
+    from cgi import parse_qsl
 
-import mimetypes
-import mimetools
-import codecs
-from io import BytesIO
-
-writer = codecs.lookup('utf-8')[3]
-
-
-def get_content_type(filename):
-    return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+import urllib
 
 
-def iter_fields(fields):
-    """Iterate over fields.
-
-    Supports list of (k, v) tuples and dicts.
-    """
-    if isinstance(fields, dict):
-        return ((k, v) for k, v in fields.iteritems())
-    return ((k, v) for k, v in fields)
-
-# The following is grabbed from Twython
-# Try and gauge the old OAuth2 library spec. Versions 1.5 and greater no longer have the callback
-# url as part of the request object; older versions we need to patch for Python 2.5... ugh. ;P
-OAUTH_CALLBACK_IN_URL = False
-OAUTH_LIB_SUPPORTS_CALLBACK = False
-if not hasattr(oauth, '_version') or float(oauth._version.manual_verstr) <= 1.4:
-    OAUTH_CLIENT_INSPECTION = inspect.getargspec(oauth.Client.request)
-    try:
-        OAUTH_LIB_SUPPORTS_CALLBACK = 'callback_url' in OAUTH_CLIENT_INSPECTION.args
-    except AttributeError:
-        # Python 2.5 doesn't return named tuples, so don't look for an args section specifically.
-        OAUTH_LIB_SUPPORTS_CALLBACK = 'callback_url' in OAUTH_CLIENT_INSPECTION
-else:
-    OAUTH_CALLBACK_IN_URL = True
+def _split_params_and_files(params_):
+        params = {}
+        files = {}
+        for k, v in params_.items():
+            if hasattr(v, 'read') and callable(v.read):
+                files[k] = v
+            elif isinstance(v, basestring):
+                params[k] = v
+            else:
+                continue
+        return params, files
 
 
 class TumblpyError(Exception):
-    """ Generic error class, catch-all for most Tumblpy issues.
-
-        from Tumblpy import TumblpyError, TumblpyRateLimitError, TumblpyAuthError
+    """Generic error class, catch-all for most Tumblpy issues.
+    from tumblpy import TumblpyError, TumblpyRateLimitError, TumblpyAuthError
     """
     def __init__(self, msg, error_code=None):
         self.msg = msg
@@ -85,8 +56,7 @@ class TumblpyError(Exception):
 
 
 class TumblpyRateLimitError(TumblpyError):
-    """ Raised when you've hit an API limit.
-    """
+    """Raised when you've hit an API limit."""
     def __init__(self, msg, error_code=None):
         self.msg = msg
         self.error_code = error_code
@@ -96,7 +66,8 @@ class TumblpyRateLimitError(TumblpyError):
 
 
 class TumblpyAuthError(TumblpyError):
-    """ Raised when you try to access a protected resource and it fails due to some issue with your authentication. """
+    """Raised when you try to access a protected resource and it fails due to
+     some issue with your authentication."""
     def __init__(self, msg, error_code=None):
         self.msg = msg
         self.error_code = error_code
@@ -106,7 +77,9 @@ class TumblpyAuthError(TumblpyError):
 
 
 class Tumblpy(object):
-    def __init__(self, app_key=None, app_secret=None, oauth_token=None, oauth_token_secret=None, headers=None, client_args=None, callback_url=None):
+    def __init__(self, app_key=None, app_secret=None, oauth_token=None, \
+                oauth_token_secret=None, headers=None, callback_url=None):
+
         # Define some API URLs real quick
         self.base_api_url = 'http://api.tumblr.com'
         self.api_version = 'v2'
@@ -114,44 +87,37 @@ class Tumblpy(object):
 
         # Authentication URLs
         self.request_token_url = 'http://www.tumblr.com/oauth/request_token'
-        self.access_token_url = 'http://www.tumblr.com/oauth/access_token'
-        self.authorize_url = 'http://www.tumblr.com/oauth/authorize'
-        self.authenticate_url = 'http://www.tumblr.com/oauth/authorize'
-
-        self.app_key = app_key
-        self.app_secret = app_secret
-        self.oauth_token = oauth_token
-        self.oauth_token_secret = oauth_token_secret
+        self.access_token_url = 'https://www.tumblr.com/oauth/access_token'
+        self.authorize_url = 'https://www.tumblr.com/oauth/authorize'
+        self.authenticate_url = 'https://www.tumblr.com/oauth/authorize'
 
         self.callback_url = callback_url
 
-        self.default_params = {'api_key': self.app_key}
+        # If there's headers, set them, otherwise be an embarassing parent
+        self.headers = headers or {'User-Agent': 'Tumblpy v' + __version__}
 
-        # If there's headers, set them. If not, lets
-        self.headers = headers or {'User-agent': 'Tumblpy %s' % __version__}
+        # Allow for unauthenticated requests
+        self.client = requests.session()
+        self.auth = None
 
-        self.consumer = None
-        self.token = None
+        if app_key and app_secret:
+            self.app_key = unicode(app_key) or app_key
+            self.app_secret = unicode(app_secret) or app_key
 
-        client_args = client_args or {}
+        if oauth_token and oauth_token_secret:
+            self.oauth_token = unicode(oauth_token)
+            self.oauth_token_secret = unicode(oauth_token_secret)
 
-        # See if they're authenticating for the first or if they already have some tokens.
-        # http://michaelhelmick.com/tokens.jpg
-        if self.app_key is not None and self.app_secret is not None:
-            self.consumer = oauth.Consumer(key=self.app_key, secret=self.app_secret)
+        if app_key and app_secret and not oauth_token and not oauth_token_secret:
+            self.auth = OAuth1(self.app_key, self.app_secret, signature_type='auth_header')
 
-        if self.oauth_token is not None and self.oauth_token_secret is not None:
-            self.token = oauth.Token(key=self.oauth_token, secret=self.oauth_token_secret)
+        if app_key and app_secret and oauth_token and oauth_token_secret:
+            self.auth = OAuth1(self.app_key, self.app_secret,
+                               self.oauth_token, self.oauth_token_secret,
+                               signature_type='auth_header')
 
-        if self.consumer is not None and self.token is not None:
-            # Authenticated
-            self.client = oauth.Client(self.consumer, self.token, **client_args)
-        elif self.consumer is not None:
-            # Authenticating
-            self.client = oauth.Client(self.consumer, **client_args)
-        else:
-            # Unauthenticated requests (in case Tumblr decides to open up some API calls to public)
-            self.client = httplib2.Http(**client_args)
+        if self.auth is not None:
+            self.client = requests.session(headers=self.headers, auth=self.auth)
 
     def get_authentication_tokens(self):
         """ So, you want to get an authentication url?
@@ -161,52 +127,48 @@ class Tumblpy(object):
             auth_url = auth_props['auth_url']
             print auth_url
         """
-        callback_url = self.callback_url
-
         request_args = {}
-        method = 'GET'
+        if self.callback_url:
+            request_args['oauth_callback'] = self.callback_url
 
-        if OAUTH_LIB_SUPPORTS_CALLBACK:
-            request_args['oauth_callback'] = callback_url
-        else:
-            # Thanks @jbouvier for the following hack
-            # This is a hack for versions of oauth that don't support the callback url
-            request_args['body'] = urllib.urlencode({'oauth_callback': callback_url})
-            method = 'POST'
+        response = self.client.get(self.request_token_url, params=request_args)
 
-        resp, content = self.client.request(self.request_token_url, method, **request_args)
+        if response.status_code != 200:
+            raise TumblpyAuthError('Seems something couldn\'t be verified with your OAuth junk. Error: %s, Message: %s' % (response.status_code, response.content))
 
-        status = int(resp['status'])
-        if status != 200:
-            raise TumblpyAuthError('There was a problem authenticating you. Error: %s, Message: %s' % (status, content), error_code=status)
-
-        request_tokens = dict(parse_qsl(content))
+        request_tokens = dict(parse_qsl(response.content))
+        if not request_tokens:
+            raise TumblpyError('Unable to decode request tokens.')
 
         auth_url_params = {
             'oauth_token': request_tokens['oauth_token'],
+            'oauth_callback': self.callback_url
         }
 
         request_tokens['auth_url'] = self.authenticate_url + '?' + urllib.urlencode(auth_url_params)
 
         return request_tokens
 
-    def get_access_token(self, oauth_verifier):
-        """ After being returned from the callback, call this.
-
-            t = Tumblpy(YOUR_CONFIG)
-            authorized_tokens = t.get_access_token(oauth_verifier)
-            oauth_token = authorized_tokens['oauth_token']
-            oauth_token_secret = authorized_tokens['oauth_token_secret']
+    def get_authorized_tokens(self, oauth_verifier):
+        """Returns authorized tokens after they go through the auth_url phase.
         """
-        resp, content = self.client.request('%s?oauth_verifier=%s' % (self.access_token_url, oauth_verifier), 'GET')
-        return dict(parse_qsl(content))
+        response = self.client.get(self.access_token_url,
+                                    params={'oauth_verifier': oauth_verifier})
+        authorized_tokens = dict(parse_qsl(response.content))
+        if not authorized_tokens:
+            raise TumblpyError('Unable to decode authorized tokens.')
 
-    def api_request(self, endpoint, blog_url=None, method='GET',
-                    extra_endpoints=None, params=None, files=None):
+        return authorized_tokens
+
+    def request(self, endpoint, method='GET', blog_url=None,
+                extra_endpoints=None, params=None):
         params = params or {}
+        method = method.lower()
 
-        # http://api.tumblr.com/v2/
-        url = self.api_url
+        if not method in ('get', 'post'):
+            raise TumblpyError('Method must be of GET or POST')
+
+        url = self.api_url  # http://api.tumblr.com/v2/
 
         if blog_url is not None:
             # http://api.tumblr.com/v2/blog/blogname.tumblr.com/
@@ -220,169 +182,68 @@ class Tumblpy(object):
         if extra_endpoints is not None:
             # In cases like:
             # http://api.tumblr.com/v2/blog/blogname.tumblr.com/posts/type/
-            # 'type' is extra in the url and this was the best way I thought to do this.
+            # 'type' is extra in the url & thought this was the best way
             # Docs: http://www.tumblr.com/docs/en/api/v2#posts
 
             url = '%s/%s' % (url, '/'.join(extra_endpoints))
 
-        params.update(self.default_params)
+        params, files = _split_params_and_files(params)
 
-        if method == 'POST':
-            if files is not None:
-                # When uploading a file, we need to create a fake request
-                # to sign parameters that are not multipart before we add
-                # the multipart file to the parameters...
-                # OAuth is not meant to sign multipart post data
-                faux_req = oauth.Request.from_consumer_and_token(self.consumer,
-                                                                 token=self.token,
-                                                                 http_method="POST",
-                                                                 http_url=url,
-                                                                 parameters=params)
-
-                faux_req.sign_request(oauth.SignatureMethod_HMAC_SHA1(),
-                                      self.consumer,
-                                      self.token)
-
-                all_upload_params = dict(parse_qsl(faux_req.to_postdata()))
-                # For Tumblr, all media (photos, videos)
-                # are sent with the 'data' parameter
-                all_upload_params['data'] = (files.name, files.read())
-                body, content_type = self.encode_multipart_formdata(all_upload_params)
-
-                self.headers.update({
-                    'Content-Type': content_type,
-                    'Content-Length': str(len(body))
-                })
-
-                req = urllib2.Request(url, body, self.headers)
-                try:
-                    req = urllib2.urlopen(req)
-                except urllib2.HTTPError, e:
-                    # Making a fake resp var because urllib2.urlopen doesn't
-                    # return a tuple like OAuth2 client.request does
-                    resp = {'status': e.code}
-                    content = e.read()
-
-                # If no error, assume response was 200
-                resp = {'status': 200}
-                content = req.read()
+        func = getattr(self.client, method)
+        try:
+            if method == 'get':
+                response = func(url, params=params, headers=self.headers,
+                                allow_redirects=False)
             else:
-                resp, content = self.client.request(url, 'POST', urllib.urlencode(params), headers=self.headers)
-        else:
-            url = '%s?%s' % (url, urllib.urlencode(params))
-            resp, content = self.client.request(url, 'GET', headers=self.headers)
+                response = func(url,
+                                data=params,
+                                files=files,
+                                headers=self.headers,
+                                allow_redirects=False)
+
+        except requests.exceptions.RequestException:
+            raise TumblpyError('An unknown error occurred.')
 
         try:
-            # If it is an avatar we need to check the HEAD of the request
-            # for 'content-location' because Tumblr /avatar endpoint redirects
-            # you from http://api.tumblr.com/v2/blog/<blog_url>/avatar to
-            # an actual url for the image.
             if endpoint == 'avatar':
-                r = resp
-
-                # Check if we couldn't find the avatar URL, if we can't
-                # build the resp, and content to match our styles
-                if r.get('content-location') is None:
-                    resp = {'status': 404}
-
-                    content = {
-                        'error': 'Unable to get avatar url for %s' % blog_url
+                content = {
+                    'response': {
+                        'url': response.headers.get('location')
                     }
-                else:
-                    content = {
-                        'response': {
-                            'url': r['content-location']
-                        }
-                    }
+                }
             else:
-                content = json.loads(content)
+                content = json.loads(response.content)
         except ValueError:
-            raise TumblpyError('Invalid JSON, response was unable to be parsed.')
+            raise TumblpyError('Unable to parse response, invalid JSON.')
 
-        status = int(resp['status'])  # I don't know why Tumblr doesn't return status as an it, but let's cast it to an int..
-        if status < 200 or status >= 300:
+        content = content.get('response', {})
+
+        if response.status_code < 200 or response.status_code > 301:
             error_message = ''
-            if 'response' in content and \
-                ('errors' in content['response'] or 'error' in content['response']):
-                if 'errors' in content['response']:
-                    for error in content['response']['errors']:
-                        error_message += '%s ' % error
-                elif 'error' in content['response']:
-                    error_message = content['response']['error']
+            if content.get('errors') or content.get('error'):
+                if 'errors' in content:
+                    for error in content['errors']:
+                        error_message = '%s ' % error
+                elif 'error' in content:
+                    error_message = content['error']
 
-            if error_message == '':
-                error_message = 'There was an error making your request.'
-            raise TumblpyError(error_message, error_code=status)
+            error_message = error_message or \
+                            'There was an error making your request.'
+            raise TumblpyError(error_message, error_code=response.status_code)
 
-        return content['response']
-
-    def post(self, endpoint, blog_url=None, extra_endpoints=None, params=None, files=None):
-        params = params or {}
-        return self.api_request(endpoint, method='POST', blog_url=blog_url,
-                                extra_endpoints=extra_endpoints, params=params,
-                                files=files)
+        return content
 
     def get(self, endpoint, blog_url=None, extra_endpoints=None, params=None):
-        params = params or {}
-        return self.api_request(endpoint, method='GET', blog_url=blog_url,
-                                extra_endpoints=extra_endpoints, params=params)
+        return self.request(endpoint, blog_url=blog_url,
+                            extra_endpoints=extra_endpoints, params=params)
 
-    def get_avatar_url(self, blog_url=None, size=64):
-        if blog_url is None:
-            raise TumblpyError('Please provide a blog url to get an avatar for.')
+    def post(self, endpoint, blog_url=None, extra_endpoints=None, params=None):
+        return self.request(endpoint, method='POST', blog_url=blog_url,
+                            extra_endpoints=extra_endpoints, params=params)
 
+    def get_avatar_url(self, blog_url, size=64):
         size = [str(size)] or ['64']
-
         return self.get('avatar', blog_url=blog_url, extra_endpoints=size)
 
-    # Thanks urllib3 <3
-    def encode_multipart_formdata(self, fields, boundary=None):
-        """
-        Encode a dictionary of ``fields`` using the multipart/form-data mime format.
-
-        :param fields:
-            Dictionary of fields or list of (key, value) field tuples.  The key is
-            treated as the field name, and the value as the body of the form-data
-            bytes. If the value is a tuple of two elements, then the first element
-            is treated as the filename of the form-data section.
-
-            Field names and filenames must be unicode.
-
-        :param boundary:
-            If not specified, then a random boundary will be generated using
-            :func:`mimetools.choose_boundary`.
-        """
-        body = BytesIO()
-        if boundary is None:
-            boundary = mimetools.choose_boundary()
-
-        for fieldname, value in iter_fields(fields):
-            body.write('--%s\r\n' % (boundary))
-
-            if isinstance(value, tuple):
-                filename, data = value
-                writer(body).write('Content-Disposition: form-data; name="%s"; '
-                                   'filename="%s"\r\n' % (fieldname, filename))
-                body.write('Content-Type: %s\r\n\r\n' %
-                           (get_content_type(filename)))
-            else:
-                data = value
-                writer(body).write('Content-Disposition: form-data; name="%s"\r\n'
-                                   % (fieldname))
-                body.write(b'Content-Type: text/plain\r\n\r\n')
-
-            if isinstance(data, int):
-                data = str(data)  # Backwards compatibility
-
-            if isinstance(data, unicode):
-                writer(body).write(data)
-            else:
-                body.write(data)
-
-            body.write(b'\r\n')
-
-        body.write('--%s--\r\n' % (boundary))
-
-        content_type = 'multipart/form-data; boundary=%s' % boundary
-
-        return body.getvalue(), content_type
+    def __repr__(self):
+        return u'<TumblrAPI: %s>' % self.app_key

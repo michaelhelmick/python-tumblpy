@@ -4,8 +4,8 @@ from setuptools import setup
 
 setup(
     name='python-tumblpy',
-    version='0.5.0',
-    install_requires=['httplib2', 'oauth2', 'simplejson'],
+    version='0.6.0',
+    install_requires=['requests>=0.14.1', 'simplejson'],
     author='Mike Helmick',
     author_email='mikehelmick@me.com',
     license='MIT License',
