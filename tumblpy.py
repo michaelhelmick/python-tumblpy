@@ -91,6 +91,8 @@ class Tumblpy(object):
 
         self.callback_url = callback_url
 
+        self.default_params = {'api_key': app_key}
+
         # If there's headers, set them, otherwise be an embarassing parent
         self.headers = headers or {'User-Agent': 'Tumblpy v' + __version__}
 
@@ -186,6 +188,7 @@ class Tumblpy(object):
             url = '%s/%s' % (url, '/'.join(extra_endpoints))
 
         params, files = _split_params_and_files(params)
+        params.update(self.default_params)
 
         func = getattr(self.client, method)
         try:
