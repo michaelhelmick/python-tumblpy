@@ -31,10 +31,8 @@ def _split_params_and_files(params_):
         for k, v in params_.items():
             if hasattr(v, 'read') and callable(v.read):
                 files[k] = v
-            elif isinstance(v, basestring):
-                params[k] = v
             else:
-                continue
+                params[k] = v
         return params, files
 
 
