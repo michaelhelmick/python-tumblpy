@@ -76,7 +76,8 @@ class TumblpyAuthError(TumblpyError):
 
 class Tumblpy(object):
     def __init__(self, app_key=None, app_secret=None, oauth_token=None, \
-                oauth_token_secret=None, headers=None, callback_url=None):
+                oauth_token_secret=None, headers=None, callback_url=None, \
+                pool_maxsize=None):
 
         # Define some API URLs real quick
         self.base_api_url = 'http://api.tumblr.com'
@@ -96,8 +97,13 @@ class Tumblpy(object):
         # If there's headers, set them, otherwise be an embarassing parent
         self.headers = headers or {'User-Agent': 'Tumblpy v' + __version__}
 
+        if pool_maxsize:
+            requests_config = {'pool_maxsize': pool_maxsize}
+        else:
+            requests_config = {}
+
         # Allow for unauthenticated requests
-        self.client = requests.session()
+        self.client = requests.session(config=requests_config)
         self.auth = None
 
         if app_key and app_secret:
@@ -117,7 +123,8 @@ class Tumblpy(object):
                                signature_type='auth_header')
 
         if self.auth is not None:
-            self.client = requests.session(headers=self.headers, auth=self.auth)
+            self.client = requests.session(headers=self.headers, auth=self.auth,
+                                           config=requests_config)
 
     def get_authentication_tokens(self):
         """ So, you want to get an authentication url?
