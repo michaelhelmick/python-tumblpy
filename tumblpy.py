@@ -205,6 +205,9 @@ class Tumblpy(object):
         except requests.exceptions.RequestException:
             raise TumblpyError('An unknown error occurred.')
 
+        if response.status_code == 401:
+            raise TumblpyAuthError('Error: %s, Message: %s' % (response.status_code, response.content))
+
         try:
             if endpoint == 'avatar':
                 content = {
