@@ -31,8 +31,14 @@ def _split_params_and_files(params_):
         for k, v in params_.items():
             if hasattr(v, 'read') and callable(v.read):
                 files[k] = v
-            else:
+            elif isinstance(v, basestring):
                 params[k] = v
+            elif v is True or v is False:
+                raise TumblpyError('Boolean value for "%s" must be converted into a lowercase string.' % k)
+            elif isinstance(v, int):
+                params[k] = v
+            else:
+                raise TumblpyError('Value for "%s" was not parsable.' % k)
         return params, files
 
 
