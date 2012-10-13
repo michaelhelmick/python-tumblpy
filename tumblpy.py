@@ -34,7 +34,7 @@ def _split_params_and_files(params_):
             elif isinstance(v, basestring):
                 params[k] = v
             elif v is True or v is False:
-                raise TumblpyError('Boolean value for "%s" must be converted into a lowercase string.' % k)
+                params[k] = 'true' if v else 'false'
             elif isinstance(v, int):
                 params[k] = v
             else:
