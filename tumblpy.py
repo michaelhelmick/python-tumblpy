@@ -33,10 +33,10 @@ def _split_params_and_files(params_):
                 files[k] = v
             elif isinstance(v, basestring):
                 params[k] = v
-            elif v is True or v is False:
+            elif isinstance(v, bool):
                 params[k] = 'true' if v else 'false'
             elif isinstance(v, int):
-                params[k] = v
+                params[k] = unicode(v)
             else:
                 raise TumblpyError('Value for "%s" was not parsable.' % k)
         return params, files
