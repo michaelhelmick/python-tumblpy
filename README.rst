@@ -75,7 +75,7 @@ Handling the Callback
     # oauth_verifier = request.GET.get('oauth_verifier')
     
     oauth_verifier = *Grab oauth verifier from URL*
-    authorized_tokens = t.get_access_token(oauth_verifier)
+    authorized_tokens = t.get_authorized_tokens(oauth_verifier)
     
     final_oauth_token = authorized_tokens['oauth_token']
     final_oauth_token_secret = authorized_tokens['oauth_token_secret']

@@ -33,8 +33,12 @@ def _split_params_and_files(params_):
                 files[k] = v
             elif isinstance(v, basestring):
                 params[k] = v
+            elif v is True or v is False:
+                params[k] = 'true' if v else 'false'
+            elif isinstance(v, int):
+                params[k] = v
             else:
-                continue
+                raise TumblpyError('Value for "%s" was not parsable.' % k)
         return params, files
 
 
@@ -78,7 +82,8 @@ class TumblpyAuthError(TumblpyError):
 
 class Tumblpy(object):
     def __init__(self, app_key=None, app_secret=None, oauth_token=None, \
-                oauth_token_secret=None, headers=None, callback_url=None):
+                oauth_token_secret=None, headers=None, callback_url=None, \
+                pool_maxsize=None):
 
         # Define some API URLs real quick
         self.base_api_url = 'http://api.tumblr.com'
@@ -93,11 +98,18 @@ class Tumblpy(object):
 
         self.callback_url = callback_url
 
+        self.default_params = {'api_key': app_key}
+
         # If there's headers, set them, otherwise be an embarassing parent
         self.headers = headers or {'User-Agent': 'Tumblpy v' + __version__}
 
+        if pool_maxsize:
+            requests_config = {'pool_maxsize': pool_maxsize}
+        else:
+            requests_config = {}
+
         # Allow for unauthenticated requests
-        self.client = requests.session()
+        self.client = requests.session(config=requests_config)
         self.auth = None
 
         if app_key and app_secret:
@@ -117,7 +129,8 @@ class Tumblpy(object):
                                signature_type='auth_header')
 
         if self.auth is not None:
-            self.client = requests.session(headers=self.headers, auth=self.auth)
+            self.client = requests.session(headers=self.headers, auth=self.auth,
+                                           config=requests_config)
 
     def get_authentication_tokens(self):
         """ So, you want to get an authentication url?
@@ -188,6 +201,7 @@ class Tumblpy(object):
             url = '%s/%s' % (url, '/'.join(extra_endpoints))
 
         params, files = _split_params_and_files(params)
+        params.update(self.default_params)
 
         func = getattr(self.client, method)
         try:
@@ -203,6 +217,9 @@ class Tumblpy(object):
 
         except requests.exceptions.RequestException:
             raise TumblpyError('An unknown error occurred.')
+
+        if response.status_code == 401:
+            raise TumblpyAuthError('Error: %s, Message: %s' % (response.status_code, response.content))
 
         try:
             if endpoint == 'avatar':
