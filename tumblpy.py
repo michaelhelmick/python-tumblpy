@@ -237,7 +237,7 @@ class Tumblpy(object):
 
         if response.status_code < 200 or response.status_code > 301:
             error_message = ''
-            if content.get('errors') or content.get('error'):
+            if content and (content.get('errors') or content.get('error')):
                 if 'errors' in content:
                     for error in content['errors']:
                         error_message = '%s ' % error
