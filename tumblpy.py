@@ -1,7 +1,7 @@
 """ Tumblpy """
 
 __author__ = 'Mike Helmick <mikehelmick@me.com>'
-__version__ = '0.6.1'
+__version__ = '0.6.2'
 
 import requests
 from requests.auth import OAuth1
@@ -233,7 +233,10 @@ class Tumblpy(object):
         except ValueError:
             raise TumblpyError('Unable to parse response, invalid JSON.')
 
-        content = content.get('response', {})
+        try:
+            content = content.get('response', {})
+        except AttributeError:
+            raise TumblpyError('Unable to parse response, invalid content returned: %s' % content)
 
         if response.status_code < 200 or response.status_code > 301:
             error_message = ''
