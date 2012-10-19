@@ -80,6 +80,12 @@ class TumblpyAuthError(TumblpyError):
         return repr(self.msg)
 
 
+class TumblpyTimeout(Exception):
+    """Raised when you've set a timeout and this timeout has expired during the
+    request."""
+    pass
+
+
 class Tumblpy(object):
     def __init__(self, app_key=None, app_secret=None, oauth_token=None, \
                 oauth_token_secret=None, headers=None, callback_url=None, \
@@ -174,7 +180,7 @@ class Tumblpy(object):
         return authorized_tokens
 
     def request(self, endpoint, method='GET', blog_url=None,
-                extra_endpoints=None, params=None):
+                extra_endpoints=None, params=None, timeout=None):
         params = params or {}
         method = method.lower()
 
@@ -207,13 +213,17 @@ class Tumblpy(object):
         try:
             if method == 'get':
                 response = func(url, params=params, headers=self.headers,
-                                allow_redirects=False)
+                                timeout=timeout, allow_redirects=False)
             else:
                 response = func(url,
                                 data=params,
                                 files=files,
                                 headers=self.headers,
+                                timeout=timeout,
                                 allow_redirects=False)
+
+        except requests.exceptions.Timeout:
+            raise TumblpyTimeout('Request timed out.')
 
         except requests.exceptions.RequestException:
             raise TumblpyError('An unknown error occurred.')
@@ -253,17 +263,22 @@ class Tumblpy(object):
 
         return content
 
-    def get(self, endpoint, blog_url=None, extra_endpoints=None, params=None):
+    def get(self, endpoint, blog_url=None, extra_endpoints=None, params=None,
+            timeout=None):
         return self.request(endpoint, blog_url=blog_url,
-                            extra_endpoints=extra_endpoints, params=params)
+                            extra_endpoints=extra_endpoints, params=params,
+                            timeout=timeout)
 
-    def post(self, endpoint, blog_url=None, extra_endpoints=None, params=None):
+    def post(self, endpoint, blog_url=None, extra_endpoints=None, params=None,
+             timeout=None):
         return self.request(endpoint, method='POST', blog_url=blog_url,
-                            extra_endpoints=extra_endpoints, params=params)
+                            extra_endpoints=extra_endpoints, params=params,
+                            timeout=timeout)
 
-    def get_avatar_url(self, blog_url, size=64):
+    def get_avatar_url(self, blog_url, size=64, timeout=None):
         size = [str(size)] or ['64']
-        return self.get('avatar', blog_url=blog_url, extra_endpoints=size)
+        return self.get('avatar', blog_url=blog_url, extra_endpoints=size,
+                        timeout=timeout)
 
     def __repr__(self):
         return u'<TumblrAPI: %s>' % self.app_key
