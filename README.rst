@@ -44,7 +44,7 @@ If you wish to have a dynamic callback url, specify ``callback_url`` when you in
 ::
 
     t = Tumblpy(app_key = '*your app key*',
-            app_secret = '*your app secret*'
+            app_secret = '*your app secret*',
             callback_url = 'http://example.com/callback/')
 
 ::
