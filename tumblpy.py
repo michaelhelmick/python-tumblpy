@@ -4,7 +4,7 @@ __author__ = 'Mike Helmick <mikehelmick@me.com>'
 __version__ = '0.6.3'
 
 import requests
-from requests.auth import OAuth1
+from requests_oauthlib import OAuth1
 
 try:
     import simplejson as json
