@@ -20,3 +20,4 @@ dist
 *.pyo
 *.tmp*
 .DS_Store
+.idea

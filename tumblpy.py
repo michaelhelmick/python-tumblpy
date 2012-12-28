@@ -140,6 +140,7 @@ class Tumblpy(object):
             auth_url = auth_props['auth_url']
             print auth_url
         """
+
         request_args = {}
         if self.callback_url:
             request_args['oauth_callback'] = self.callback_url
@@ -155,8 +156,9 @@ class Tumblpy(object):
 
         auth_url_params = {
             'oauth_token': request_tokens['oauth_token'],
-            'oauth_callback': self.callback_url
         }
+        if self.callback_url:
+            auth_url_params['oauth_callback'] = self.callback_url
 
         request_tokens['auth_url'] = self.authenticate_url + '?' + urllib.urlencode(auth_url_params)
 
