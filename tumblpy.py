@@ -109,7 +109,7 @@ class Tumblpy(object):
             requests_config = {}
 
         # Allow for unauthenticated requests
-        self.client = requests.session(config=requests_config)
+        self.client = requests.session()
         self.auth = None
 
         if app_key and app_secret:
@@ -129,8 +129,8 @@ class Tumblpy(object):
                                signature_type='auth_header')
 
         if self.auth is not None:
-            self.client = requests.session(headers=self.headers, auth=self.auth,
-                                           config=requests_config)
+            self.client.headers.update(self.headers)
+            self.client.auth = self.auth
 
     def get_authentication_tokens(self):
         """ So, you want to get an authentication url?
