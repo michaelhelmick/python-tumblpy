@@ -4,7 +4,7 @@ __author__ = 'Mike Helmick <mikehelmick@me.com>'
 __version__ = '0.6.3'
 
 import requests
-from requests.auth import OAuth1
+from requests_oauthlib import OAuth1
 
 try:
     import simplejson as json
@@ -109,7 +109,7 @@ class Tumblpy(object):
             requests_config = {}
 
         # Allow for unauthenticated requests
-        self.client = requests.session(config=requests_config)
+        self.client = requests.session()
         self.auth = None
 
         if app_key and app_secret:
@@ -129,8 +129,8 @@ class Tumblpy(object):
                                signature_type='auth_header')
 
         if self.auth is not None:
-            self.client = requests.session(headers=self.headers, auth=self.auth,
-                                           config=requests_config)
+            self.client.headers.update(self.headers)
+            self.client.auth = self.auth
 
     def get_authentication_tokens(self):
         """ So, you want to get an authentication url?
@@ -140,6 +140,7 @@ class Tumblpy(object):
             auth_url = auth_props['auth_url']
             print auth_url
         """
+
         request_args = {}
         if self.callback_url:
             request_args['oauth_callback'] = self.callback_url
@@ -155,8 +156,9 @@ class Tumblpy(object):
 
         auth_url_params = {
             'oauth_token': request_tokens['oauth_token'],
-            'oauth_callback': self.callback_url
         }
+        if self.callback_url:
+            auth_url_params['oauth_callback'] = self.callback_url
 
         request_tokens['auth_url'] = self.authenticate_url + '?' + urllib.urlencode(auth_url_params)
 

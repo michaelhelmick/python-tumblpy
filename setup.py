@@ -4,8 +4,8 @@ from setuptools import setup
 
 setup(
     name='python-tumblpy',
-    version='0.6.3',
-    install_requires=['requests>=0.14.1', 'simplejson'],
+    version='0.7',
+    install_requires=['requests>=1.0.4', 'simplejson', 'requests_oauthlib'],
     author='Mike Helmick',
     author_email='mikehelmick@me.com',
     license='MIT License',
@@ -22,5 +22,8 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Communications :: Chat',
         'Topic :: Internet'
-    ]
+    ],
+    dependency_links=[
+        'https://github.com/requests/requests-oauthlib/tarball/master#egg=requests_oauthlib-0.2.0'
+    ],
 )
