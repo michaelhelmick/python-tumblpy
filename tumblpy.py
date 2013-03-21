@@ -80,7 +80,7 @@ class TumblpyAuthError(TumblpyError):
         return repr(self.msg)
 
 
-class TumblpyTimeout(Exception):
+class TumblpyTimeout(TumblpyError):
     """Raised when you've set a timeout and this timeout has expired during the
     request."""
     pass
