@@ -74,6 +74,10 @@ Handling the Callback
     # In Django, you'd do something like
     # oauth_verifier = request.GET.get('oauth_verifier')
     
+    # or get the oath_verifier by visiting auth_url in a browser
+    # after you authorize the app you'll be redirected to a page (your oauth_callback or tumblr's 404)
+    # grab the oauth_verifier from the url of that page
+
     oauth_verifier = *Grab oauth verifier from URL*
     authorized_tokens = t.get_authorized_tokens(oauth_verifier)
     
