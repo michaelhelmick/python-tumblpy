@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='python-tumblpy',
-    version='0.7.0',
+    version='0.7.1',
     install_requires=['requests>=1.0.4,<1.1.0', 'simplejson', 'requests_oauthlib'],
     author='Mike Helmick',
     author_email='mikehelmick@me.com',

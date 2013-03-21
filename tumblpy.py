@@ -1,7 +1,7 @@
 """ Tumblpy """
 
 __author__ = 'Mike Helmick <mikehelmick@me.com>'
-__version__ = '0.6.3'
+__version__ = '0.7.1'
 
 import requests
 from requests_oauthlib import OAuth1
