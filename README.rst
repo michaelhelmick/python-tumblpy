@@ -4,7 +4,7 @@ Tumblpy
 .. image:: https://pypip.in/d/python-tumblpy/badge.png
         :target: https://crate.io/packages/python-tumblpy/
 
-Tumblpy is a Python library to help interface with `Tumblr v2 REST API <http://www.tumblr.com/docs/en/api/v2>`_ & OAuth
+Tumblpy is a Python library to help interface with Tumblr v2 REST API & OAuth
 
 Features
 --------
@@ -145,7 +145,7 @@ Following a user
         # Tumblr will respond with a 404 and Tumblpy will raise a TumblpyError
 
 Get a User Avatar URL *(No need for authentication for this method)*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ::
 
     t = Tumblpy()
