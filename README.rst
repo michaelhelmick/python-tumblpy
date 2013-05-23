@@ -166,3 +166,5 @@ Catching errors
     except TumbplyError, e:
         print e.message
         print 'Something bad happened :('
+
+Thanks for using Tumblpy!
