@@ -24,26 +24,26 @@ class Tumblpy(object):
 
         self.default_params = {'api_key': app_key}
 
-        self.headers = {'User-Agent': 'Tumblpy v' + __version__}
+        req_headers = {'User-Agent': 'Tumblpy v' + __version__}
         if headers:
-            self.headers.update(headers)
+            req_headers.update(headers)
 
         self.app_key = app_key
         self.app_secret = app_secret
         self.oauth_token = oauth_token
         self.oauth_token_secret = oauth_token_secret
 
-        self.auth = None
+        auth = None
         if self.app_key and self.app_secret:
             if not self.oauth_token and not self.oauth_token_secret:
-                self.auth = OAuth1(self.app_key, self.app_secret)
+                auth = OAuth1(self.app_key, self.app_secret)
             else:
-                self.auth = OAuth1(self.app_key, self.app_secret,
-                                   self.oauth_token, self.oauth_token_secret)
+                auth = OAuth1(self.app_key, self.app_secret,
+                              self.oauth_token, self.oauth_token_secret)
 
         self.client = requests.Session()
-        self.client.headers = self.headers
-        self.client.auth = self.auth
+        self.client.headers = req_headers
+        self.client.auth = auth
 
     def get_authentication_tokens(self, callback_url=None):
         """Returns a dict including an authorization URL (auth_url) to direct a user to

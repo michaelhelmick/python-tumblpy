@@ -6,7 +6,7 @@ import os
 import sys
 
 __author__ = 'Mike Helmick <mikehelmick@me.com>'
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 
 if sys.argv[-1] == 'publish':
     os.system('python setup.py sdist upload')
