@@ -120,7 +120,7 @@ class Tumblpy(object):
             if method == 'get':
                 response = func(url, params=params, allow_redirects=False)
             else:
-                response = func(url, data=params, files=files,
+                response = func(url, params=params, data=params, files=files,
                                 allow_redirects=False)
         except requests.exceptions.RequestException:
             raise TumblpyError('An unknown error occurred.')

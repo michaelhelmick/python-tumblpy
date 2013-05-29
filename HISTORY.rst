@@ -3,6 +3,13 @@
 History
 -------
 
+1.0.1 (2013-05-29)
+++++++++++++++++++
+
+- Hotfix image uploading (not sure why we have to pass ``params`` AND ``data`` to the POST, hotfix for the time being...)
+- Allow for ints and floats (and longs in Python 2) to be passed as parameters to Tumblpy Tumblr API functions
+
+
 1.0.0 (2013-05-23)
 ++++++++++++++++++
 

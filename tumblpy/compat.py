@@ -21,9 +21,11 @@ if is_py2:
         from cgi import parse_qsl
 
     basestring = basestring
+    numeric_types = (int, long, float)
 
 
 elif is_py3:
     from urllib.parse import urlencode, parse_qsl
 
     basestring = (str, bytes)
+    numeric_types = (int, float)

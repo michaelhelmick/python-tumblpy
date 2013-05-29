@@ -21,3 +21,4 @@ dist
 *.tmp*
 .DS_Store
 .idea
+test.py
