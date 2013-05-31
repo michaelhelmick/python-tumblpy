@@ -3,6 +3,11 @@
 History
 -------
 
+1.0.2 (2013-05-31)
+++++++++++++++++++
+
+- Made the hotfix for posting photos a little more hotfixy... fixed posting just regular posts (as well as photos)
+
 1.0.1 (2013-05-29)
 ++++++++++++++++++
 
