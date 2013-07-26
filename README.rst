@@ -33,7 +33,8 @@ Usage
 
 Authorization URL
 ~~~~~~~~~~~~~~~~~
-::
+
+.. code-block:: python
 
     t = Tumblpy(YOUR_CONSUMER_KEY, YOUR_CONSUMER_SECRET)
 
@@ -48,7 +49,8 @@ Once you click "Allow" be sure that there is a URL set up to handle getting fina
 
 Handling the Callback
 ~~~~~~~~~~~~~~~~~~~~~
-::
+
+.. code-block:: python
 
     # OAUTH_TOKEN_SECRET comes from the previous step
     # if needed, store those in a session variable or something
@@ -71,7 +73,8 @@ Handling the Callback
 
 Getting some User information
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-::
+
+.. code-block:: python
 
     # Get the final tokens from the database or wherever you have them stored
 
@@ -84,7 +87,8 @@ Getting some User information
 
 Getting posts from a certain blog
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-::
+
+.. code-block:: python
 
     # Assume you are using the blog_url and Tumblpy instance from the previous section
     posts = t.get('posts', blog_url=blog_url)
@@ -102,7 +106,8 @@ Creating a post with a photo
 
 Posting an Edited Photo *(This example resizes a photo)*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-::
+
+.. code-block:: python
 
     # Assume you are using the blog_url and Tumblpy instance from the previous sections
 
@@ -135,7 +140,8 @@ Posting an Edited Photo *(This example resizes a photo)*
 
 Following a user
 ~~~~~~~~~~~~~~~~
-::
+
+.. code-block:: python
 
     # Assume you are using the blog_url and Tumblpy instance from the previous sections
     try:
@@ -146,7 +152,8 @@ Following a user
 
 Get a User Avatar URL *(No need for authentication for this method)*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-::
+
+.. code-block:: python
 
     t = Tumblpy()
     avatar = t.get_avatar_url(blog_url='tumblpy.tumblr.com', size=128)
@@ -159,7 +166,8 @@ Get a User Avatar URL *(No need for authentication for this method)*
 
 Catching errors
 ~~~~~~~~~~~~~~~
-::
+
+.. code-block:: python
 
     try:
         t.post('user/info')
