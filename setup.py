@@ -17,7 +17,7 @@ setup(
     version=__version__,
     install_requires=['requests==1.2.2', 'requests_oauthlib==0.3.2'],
     author='Mike Helmick',
-    author_email='mikehelmick@me.com',
+    author_email='me@michaelhelmick.com',
     license=open('LICENSE').read(),
     url='https://github.com/michaelhelmick/python-tumblpy/',
     keywords='python tumblpy tumblr oauth api',
