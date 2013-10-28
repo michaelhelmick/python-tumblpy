@@ -31,6 +31,13 @@ Installing Tumbply is simple:
 Usage
 -----
 
+Importing
+~~~~~~~~~
+
+.. code-block:: python
+    
+    from tumblpy import Tumblpy
+
 Authorization URL
 ~~~~~~~~~~~~~~~~~
 
