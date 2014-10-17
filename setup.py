@@ -15,7 +15,7 @@ if sys.argv[-1] == 'publish':
 setup(
     name='python-tumblpy',
     version=__version__,
-    install_requires=['requests==1.2.2', 'requests_oauthlib==0.3.2'],
+    install_requires=['requests>=1.2.2', 'requests_oauthlib>=0.3.2'],
     author='Mike Helmick',
     author_email='me@michaelhelmick.com',
     license=open('LICENSE').read(),
