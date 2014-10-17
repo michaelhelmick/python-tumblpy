@@ -3,6 +3,12 @@
 History
 -------
 
+1.0.3 (2014-10-17)
+++++++++++++++++++
+
+- Unpin ``requests`` and ``requests-oauthlib`` versions in ``setup.py``
+
+
 1.0.2 (2013-05-31)
 ++++++++++++++++++
 
