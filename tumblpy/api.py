@@ -60,7 +60,8 @@ class Tumblpy(object):
         if response.status_code != 200:
             raise TumblpyAuthError('Seems something couldn\'t be verified with your OAuth junk. Error: %s, Message: %s' % (response.status_code, response.content))
 
-        request_tokens = dict(parse_qsl(response.content))
+        # added .decode to fix first step auth issues 
+        request_tokens = dict(parse_qsl( response.content.decode() ))
         if not request_tokens:
             raise TumblpyError('Unable to decode request tokens.')
 
