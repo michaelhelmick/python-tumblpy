@@ -60,8 +60,7 @@ class Tumblpy(object):
         if response.status_code != 200:
             raise TumblpyAuthError('Seems something couldn\'t be verified with your OAuth junk. Error: %s, Message: %s' % (response.status_code, response.content))
 
-        # added .decode to fix first step auth issues 
-        request_tokens = dict(parse_qsl( response.content.decode() ))
+        request_tokens = dict(parse_qsl(response.content.decode()))
         if not request_tokens:
             raise TumblpyError('Unable to decode request tokens.')
 
@@ -78,9 +77,11 @@ class Tumblpy(object):
     def get_authorized_tokens(self, oauth_verifier):
         """Returns authorized tokens after they go through the auth_url phase.
         """
+
         response = self.client.get(self.access_token_url,
                                    params={'oauth_verifier': oauth_verifier})
-        authorized_tokens = dict(parse_qsl(response.content))
+        authorized_tokens = dict(parse_qsl(response.content.decode() ))
+
         if not authorized_tokens:
             raise TumblpyError('Unable to decode authorized tokens.')
 
