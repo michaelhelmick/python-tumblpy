@@ -68,7 +68,7 @@ Handling the Callback
     # oauth_verifier = request.GET.get('oauth_verifier')
 
 
-    t = Tumblpy(YOUR_CONSUMER_KEY, YOUR CONSUMER_SECRET,
+    t = Tumblpy(YOUR_CONSUMER_KEY, YOUR_CONSUMER_SECRET,
                 OAUTH_TOKEN, OAUTH_TOKEN_SECRET)
 
     authorized_tokens = t.get_authorized_tokens(oauth_verifier)
@@ -85,7 +85,7 @@ Getting some User information
 
     # Get the final tokens from the database or wherever you have them stored
 
-    t = Tumblpy(YOUR_CONSUMER_KEY, YOUR CONSUMER_SECRET,
+    t = Tumblpy(YOUR_CONSUMER_KEY, YOUR_CONSUMER_SECRET,
                 OAUTH_TOKEN, OAUTH_TOKEN_SECRET)
 
     # Print out the user info, let's get the first blog url...
