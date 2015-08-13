@@ -3,6 +3,11 @@
 History
 -------
 
+1.0.5 (2015-08-13)
+++++++++++++++++++
+
+- Add support for ``proxies`` keyword for requests
+
 1.0.4 (2015-01-15)
 ++++++++++++++++++
 
