@@ -9,7 +9,7 @@ from .helpers import _split_params_and_files
 
 class Tumblpy(object):
     def __init__(self, app_key=None, app_secret=None, oauth_token=None,
-                 oauth_token_secret=None, headers=None):
+                 oauth_token_secret=None, headers=None, proxies=None):
 
         # Define some API URLs real quick
         self.base_api_url = 'https://api.tumblr.com'
@@ -42,6 +42,7 @@ class Tumblpy(object):
                               self.oauth_token, self.oauth_token_secret)
 
         self.client = requests.Session()
+        self.client.proxies = proxies
         self.client.headers = req_headers
         self.client.auth = auth
 
