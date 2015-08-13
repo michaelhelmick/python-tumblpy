@@ -13,7 +13,7 @@ Tumblpy is a Python library to help interface with the Tumblr API and OAuth
 """
 
 __author__ = 'Mike Helmick <mikehelmick@me.com>'
-__version__ = '1.0.4'
+__version__ = '1.0.5'
 
 from .api import Tumblpy
 from .exceptions import (
