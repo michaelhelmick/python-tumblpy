@@ -111,6 +111,8 @@ class Tumblpy(object):
             blog_url = blog_url.rstrip('/')
             if blog_url.startswith('http://'):
                 blog_url = blog_url[7:]
+            elif blog_url.startswith('https://'):
+                blog_url = blog_url[8:]
 
             url = '%sblog/%s/' % (self.api_url, blog_url)
 
