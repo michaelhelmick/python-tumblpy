@@ -186,5 +186,33 @@ class Tumblpy(object):
         size = [str(size)] or ['64']
         return self.get('avatar', blog_url=blog_url, extra_endpoints=size)
 
+    def following(self, **kwargs):
+        """
+        Gets the blogs that the current user is following.
+        :param limit: an int, the number of likes you want returned
+        :param offset: an int, the blog you want to start at, for pagination.
+
+            # Start at the 20th blog and get 20 more blogs.
+            client.following({'offset': 20, 'limit': 20})
+
+        :returns: A dict created from the JSON response
+        """
+        return self.get("user/following", params=kwargs)
+
+    def dashboard(self, **kwargs):
+        """
+        Gets the dashboard of the current user
+
+        :param limit: an int, the number of posts you want returned
+        :param offset: an int, the posts you want to start at, for pagination.
+        :param type:   the type of post you want to return
+        :param since_id:  return only posts that have appeared after this ID
+        :param reblog_info: return reblog information about posts
+        :param notes_info:  return notes information about the posts
+
+        :returns: A dict created from the JSON response
+        """
+        return self.get("user/dashboard", params=kwargs)
+
     def __repr__(self):
         return u'<TumblrAPI: %s>' % self.app_key
