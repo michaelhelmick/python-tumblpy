@@ -199,9 +199,11 @@ class Tumblpy(object):
         """
         return self.get("user/following", params=kwargs)
 
-    def dashboard(self, **kwargs):
+    def dashboard(self, kwargs):
         """
         Gets the dashboard of the current user
+        example: dashboard = client.dashboard({'limit': '3'})
+
 
         :param limit: an int, the number of posts you want returned
         :param offset: an int, the posts you want to start at, for pagination.
