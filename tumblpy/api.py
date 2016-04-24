@@ -186,7 +186,7 @@ class Tumblpy(object):
         size = [str(size)] or ['64']
         return self.get('avatar', blog_url=blog_url, extra_endpoints=size)
 
-    def following(self, **kwargs):
+    def following(self, kwargs):
         """
         Gets the blogs that the current user is following.
         :param limit: an int, the number of likes you want returned
