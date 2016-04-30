@@ -5,8 +5,8 @@ from setuptools import setup
 import os
 import sys
 
-__author__ = 'Mike Helmick <mikehelmick@me.com>'
-__version__ = '1.0.5'
+__author__ = 'Mike Helmick <me@michaelhelmick.com>'
+__version__ = '1.1.0'
 
 if sys.argv[-1] == 'publish':
     os.system('python setup.py sdist upload')

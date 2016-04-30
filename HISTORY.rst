@@ -3,10 +3,17 @@
 History
 -------
 
+1.1.0 (2016-30-04)
+++++++++++++++++++
+
+- Add following and dashboard API methods
+
+
 1.0.5 (2015-08-13)
 ++++++++++++++++++
 
 - Add support for ``proxies`` keyword for requests
+
 
 1.0.4 (2015-01-15)
 ++++++++++++++++++

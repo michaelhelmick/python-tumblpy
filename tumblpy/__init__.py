@@ -12,8 +12,8 @@ Tumblpy
 Tumblpy is a Python library to help interface with the Tumblr API and OAuth
 """
 
-__author__ = 'Mike Helmick <mikehelmick@me.com>'
-__version__ = '1.0.5'
+__author__ = 'Mike Helmick <me@michaelhelmick.com>'
+__version__ = '1.1.0'
 
 from .api import Tumblpy
 from .exceptions import (
