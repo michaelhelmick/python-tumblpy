@@ -3,6 +3,12 @@
 History
 -------
 
+1.1.1 (2016-05-12)
+++++++++++++++++++
+
+- Fix issue where blogs using https:// were being parsed wrong
+
+
 1.1.0 (2016-30-04)
 ++++++++++++++++++
 

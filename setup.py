@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
-from setuptools import setup
-
 import os
 import sys
 
+from setuptools import setup
+
 __author__ = 'Mike Helmick <me@michaelhelmick.com>'
-__version__ = '1.1.0'
+__version__ = '1.1.1'
 
 if sys.argv[-1] == 'publish':
     os.system('python setup.py sdist upload')
