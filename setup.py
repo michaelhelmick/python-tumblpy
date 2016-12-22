@@ -3,7 +3,10 @@
 import os
 import sys
 
-from setuptools import setup
+try:
+    from setuptools import setup
+except ImportError:
+    from distutils.core import setup
 
 __author__ = 'Mike Helmick <me@michaelhelmick.com>'
 __version__ = '1.1.1'
