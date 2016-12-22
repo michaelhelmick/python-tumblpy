@@ -16,7 +16,7 @@ except ImportError:
 if is_py2:
     from urllib import urlencode
     try:
-        from urlparse import parse_qsl
+        from urlparse import parse_qsl, urlparse
     except ImportError:
         from cgi import parse_qsl
 
@@ -25,7 +25,7 @@ if is_py2:
 
 
 elif is_py3:
-    from urllib.parse import urlencode, parse_qsl
+    from urllib.parse import urlencode, parse_qsl, urlparse
 
     basestring = (str, bytes)
     numeric_types = (int, float)
