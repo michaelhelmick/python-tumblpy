@@ -2,8 +2,8 @@ import requests
 from requests_oauthlib import OAuth1
 
 from . import __version__
-from .compat import json, urlencode, parse_qsl
-from .exceptions import TumblpyError, TumblpyAuthError
+from .compat import json, parse_qsl, urlencode, urlparse
+from .exceptions import TumblpyAuthError, TumblpyError
 from .helpers import _split_params_and_files
 
 
