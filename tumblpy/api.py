@@ -216,5 +216,21 @@ class Tumblpy(object):
         """
         return self.get('user/dashboard', params=kwargs)
 
+    def posts(self, blogname, post_type=None, kwargs=None):
+        """
+        Gets a list of posts from a particular blog
+        :param blogname: a string, the blogname you want to look up posts
+                         for. eg: codingjester.tumblr.com
+        :param post_type:  the type of posts you want returned, e.g. video. If omitted returns all post types.
+        :param limit: an int, the number of likes you want returned
+        :param offset: an int, the blog you want to start at, for pagination.
+        :returns: A dict created from the JSON response
+        """
+        if post_type is None:
+            url = 'blog/%s/posts' % blogname
+        else:
+            url = 'blog/%s/posts/%s' % (blogname, post_type)
+        return self.get(url, params=kwargs)
+
     def __repr__(self):
         return u'<TumblrAPI: %s>' % self.app_key
