@@ -109,12 +109,11 @@ class Tumblpy(object):
         if blog_url is not None:
             # http://api.tumblr.com/v2/blog/blogname.tumblr.com/
             blog_url = urlparse(blog_url)
+
             url = '%sblog/%s/' % (
                 self.api_url,
                 blog_url.hostname if blog_url.hostname is not None else blog_url.path
             )
-
-            url = '%sblog/%s/' % (self.api_url, blog_url)
 
         url = '%s%s' % (url, endpoint)
         if extra_endpoints is not None:
