@@ -35,7 +35,7 @@ Importing
 ~~~~~~~~~
 
 .. code-block:: python
-    
+
     from tumblpy import Tumblpy
 
 Authorization URL
@@ -49,7 +49,7 @@ Authorization URL
     auth_url = auth_props['auth_url']
 
     OAUTH_TOKEN_SECRET = auth_props['oauth_token_secret']
-    
+
     print 'Connect with Tumblr via: %s' % auth_url
 
 Once you click "Allow" be sure that there is a URL set up to handle getting finalized tokens and possibly adding them to your database to use their information at a later date.
@@ -72,10 +72,10 @@ Handling the Callback
                 OAUTH_TOKEN, OAUTH_TOKEN_SECRET)
 
     authorized_tokens = t.get_authorized_tokens(oauth_verifier)
-    
+
     final_oauth_token = authorized_tokens['oauth_token']
     final_oauth_token_secret = authorized_tokens['oauth_token_secret']
-    
+
     # Save those tokens to the database for a later use?
 
 Getting some User information
@@ -100,6 +100,11 @@ Getting posts from a certain blog
     # Assume you are using the blog_url and Tumblpy instance from the previous section
     posts = t.get('posts', blog_url=blog_url)
     print posts
+    # or you could use the `posts` method
+    audio_posts = t.posts(blog_url, 'audio')
+    print audio_posts
+    all_posts = t.posts(blog_url)
+    print all_posts
 
 Creating a post with a photo
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -135,7 +140,7 @@ Posting an Edited Photo *(This example resizes a photo)*
 
     image_io = StringIO.StringIO()
     photo.save(image_io, format='JPEG')
-    
+
     image_io.seek(0)
 
     try:
