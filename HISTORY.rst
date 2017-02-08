@@ -3,6 +3,12 @@
 History
 -------
 
+1.1.4 (2016-02-08)
+++++++++++++++++++
+
+- Remove old api url string formatting.
+- Added ``posts`` method to Tumblpy, see README for example.
+
 1.1.3 (2016-01-17)
 ++++++++++++++++++
 
